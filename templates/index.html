@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargills Press Monitoring</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Cargills Press Monitoring</h1>
+      <p class="subtitle">Real-time media monitoring dashboard</p>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info">
+          {% for msg in messages %}
+            <p>{{ msg }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon">📰</div>
+        <div class="kpi-value">{{ articles|length }}</div>
+        <div class="kpi-label">Total Articles</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📄</div>
+        <div class="kpi-value">{{ newspapers_sorted|length }}</div>
+        <div class="kpi-label">Newspapers</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🌐</div>
+        <div class="kpi-value">{{ languages|length }}</div>
+        <div class="kpi-label">Languages</div>
+      </div>
+      <div class="kpi-card highlight">
+        <div class="kpi-icon">✨</div>
+        <div class="kpi-value">{{ new_articles|length }}</div>
+        <div class="kpi-label">New Today</div>
+      </div>
+    </div>
+
+    <!-- Top Controls -->
+    <div class="top-controls">
+      <form action="{{ url_for('run_scan') }}" method="post" class="scan-form">
+        <button type="submit" class="btn-primary">
+          <span class="icon">🔍</span> Run Scan Now
+        </button>
+      </form>
+
+      <form action="{{ url_for('index') }}" method="get" class="filter-form">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label for="language">Language</label>
+            <select name="language" id="language">
+              <option value="">All Languages</option>
+              <option value="English" {% if filters.language == 'English' %}selected{% endif %}>English</option>
+              <option value="Sinhala" {% if filters.language == 'Sinhala' %}selected{% endif %}>Sinhala</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="newspaper">Newspaper</label>
+            <select name="newspaper" id="newspaper">
+              <option value="">All Newspapers</option>
+              {% for np in newspapers_sorted %}
+                <option value="{{ np }}" {% if filters.newspaper == np %}selected{% endif %}>{{ np }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="publish_date">Date</label>
+            <input type="date" name="publish_date" id="publish_date" value="{{ filters.publish_date }}">
+          </div>
+
+          <button type="submit" class="btn-secondary">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- New Articles Section -->
+    <section class="section">
+      <h2>🆕 New Articles (This Run)</h2>
+      {% if new_articles and new_articles|length > 0 %}
+        <p class="section-info"><strong>{{ new_articles|length }}</strong> new articles detected in this scan.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Newspaper</th>
+                <th>Lang</th>
+                <th>Title</th>
+                <th>Publish Date</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in new_articles %}
+              <tr class="new-row">
+                <td>{{ loop.index }}</td>
+                <td>{{ a.newspaper }}</td>
+                <td><span class="lang-tag">{{ a.language[:1] }}</span></td>
+                <td class="title-col">{{ a.title }}</td>
+                <td>{{ a.publish_date or '—' }}</td>
+                <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open →</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">No new articles in this run yet. Click <strong>Run Scan Now</strong> to check for updates.</p>
+      {% endif %}
+    </section>
+
+    <!-- All Articles Section -->
+    <section class="section">
+      <h2>📚 All Articles in Database</h2>
+      <p class="section-info">Total: <strong>{{ articles|length }}</strong> articles archived</p>
+
+      {% if articles and articles|length > 0 %}
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Newspaper</th>
+                <th>Lang</th>
+                <th>Title</th>
+                <th>Publish Date</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in articles %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ a.newspaper }}</td>
+                <td><span class="lang-tag">{{ a.language[:1] }}</span></td>
+                <td class="title-col">{{ a.title }}</td>
+                <td>{{ a.publish_date or '—' }}</td>
+                <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open →</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">Database is empty. Run a scan to start collecting articles.</p>
+      {% endif %}
+    </section>
+  </div>
+</body>
+</html>
