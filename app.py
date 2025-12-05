@@ -309,7 +309,11 @@ def index():
     # Filters from query params
     language = request.args.get("language", "").strip()
     newspaper = request.args.get("newspaper", "").strip()
-    publish_date = request.args.get("publish_date", "").strip()  # expected: YYYY-MM-DD
+
+    # NEW — which field to filter by
+    date_type = request.args.get("date_type", "publish_date")
+    start_date = request.args.get("start_date", "").strip()
+    end_date = request.args.get("end_date", "").strip()
 
     try:
         query = session.query(PressArticle)
@@ -318,16 +322,28 @@ def index():
             query = query.filter(PressArticle.language == language)
         if newspaper:
             query = query.filter(PressArticle.newspaper == newspaper)
-        if publish_date:
-            # publish_date stored as "YYYY-MM-DD..." string, so prefix match
-            like_pattern = f"{publish_date}%"
-            query = query.filter(PressArticle.publish_date.like(like_pattern))
+
+        # 🔥 HANDLE DATE RANGE FILTER
+        if start_date and end_date:
+            if date_type == "publish_date":
+                query = query.filter(
+                    PressArticle.publish_date >= start_date,
+                    PressArticle.publish_date <= end_date + "T99:99:99"
+                )
+            elif date_type == "created_at":
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+                query = query.filter(
+                    PressArticle.created_at >= start_dt,
+                    PressArticle.created_at < end_dt
+                )
 
         articles = query.order_by(PressArticle.id.desc()).all()
+        languages = set(a.language for a in articles if a.language)
+
     finally:
         session.close()
 
-    # No "new_articles" by default (only after manual run)
     return render_template(
         "index.html",
         new_articles=[],
@@ -335,10 +351,14 @@ def index():
         filters={
             "language": language,
             "newspaper": newspaper,
-            "publish_date": publish_date
+            "date_type": date_type,
+            "start_date": start_date,
+            "end_date": end_date
         },
-        newspapers_sorted=sorted(set(NEWS_MAP.values()))
+        newspapers_sorted=sorted(set(NEWS_MAP.values())),
+        languages=languages
     )
+
 
 @app.route("/run-scan", methods=["POST"])
 def run_scan():
@@ -350,7 +370,7 @@ def run_scan():
     try:
         articles = (
             session.query(PressArticle)
-            .order_by(PressArticle.id.desc())
+            .order_by(PressArticle.created_at.desc())
             .all()
         )
     finally:
@@ -364,7 +384,9 @@ def run_scan():
         filters={
             "language": "",
             "newspaper": "",
-            "publish_date": ""
+            "date_type": "publish_date",
+            "start_date": "",
+            "end_date": ""
         },
         newspapers_sorted=sorted(set(NEWS_MAP.values()))
     )

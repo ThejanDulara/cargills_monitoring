@@ -54,40 +54,57 @@
     <!-- Top Controls -->
     <div class="top-controls">
       <form action="{{ url_for('run_scan') }}" method="post" class="scan-form">
-        <button type="submit" class="btn-primary">
+        <button type="submit" class="btn-primary" id="scanBtn">
           <span class="icon">🔍</span> Run Scan Now
         </button>
       </form>
 
       <form action="{{ url_for('index') }}" method="get" class="filter-form">
-        <div class="filter-row">
-          <div class="filter-group">
-            <label for="language">Language</label>
-            <select name="language" id="language">
-              <option value="">All Languages</option>
-              <option value="English" {% if filters.language == 'English' %}selected{% endif %}>English</option>
-              <option value="Sinhala" {% if filters.language == 'Sinhala' %}selected{% endif %}>Sinhala</option>
-            </select>
-          </div>
+      <div class="filter-row">
 
-          <div class="filter-group">
-            <label for="newspaper">Newspaper</label>
-            <select name="newspaper" id="newspaper">
-              <option value="">All Newspapers</option>
-              {% for np in newspapers_sorted %}
-                <option value="{{ np }}" {% if filters.newspaper == np %}selected{% endif %}>{{ np }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label for="publish_date">Date</label>
-            <input type="date" name="publish_date" id="publish_date" value="{{ filters.publish_date }}">
-          </div>
-
-          <button type="submit" class="btn-secondary">Apply Filters</button>
+        <div class="filter-group">
+          <label for="language">Language</label>
+          <select name="language" id="language">
+            <option value="">All Languages</option>
+            <option value="English" {% if filters.language == 'English' %}selected{% endif %}>English</option>
+            <option value="Sinhala" {% if filters.language == 'Sinhala' %}selected{% endif %}>Sinhala</option>
+          </select>
         </div>
-      </form>
+
+        <div class="filter-group">
+          <label for="newspaper">Newspaper</label>
+          <select name="newspaper" id="newspaper">
+            <option value="">All Newspapers</option>
+            {% for np in newspapers_sorted %}
+              <option value="{{ np }}" {% if filters.newspaper == np %}selected{% endif %}>{{ np }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- NEW: Date type -->
+        <div class="filter-group">
+          <label for="date_type">Filter by</label>
+          <select name="date_type" id="date_type">
+            <option value="publish_date" {% if filters.date_type == 'publish_date' %}selected{% endif %}>Publish Date</option>
+            <option value="created_at" {% if filters.date_type == 'created_at' %}selected{% endif %}>Created Date</option>
+          </select>
+        </div>
+
+        <!-- NEW: Date Range -->
+        <div class="filter-group">
+          <label for="start_date">Start Date</label>
+          <input type="date" name="start_date" id="start_date" value="{{ filters.start_date }}">
+        </div>
+
+        <div class="filter-group">
+          <label for="end_date">End Date</label>
+          <input type="date" name="end_date" id="end_date" value="{{ filters.end_date }}">
+        </div>
+
+        <button type="submit" class="btn-secondary" style="height:42px;">Apply Filters</button>
+      </div>
+    </form>
+
     </div>
 
     <!-- New Articles Section -->
@@ -104,6 +121,7 @@
                 <th>Lang</th>
                 <th>Title</th>
                 <th>Publish Date</th>
+                <th class="created-at">Created At</th>
                 <th>Link</th>
               </tr>
             </thead>
@@ -115,7 +133,8 @@
                 <td><span class="lang-tag">{{ a.language[:1] }}</span></td>
                 <td class="title-col">{{ a.title }}</td>
                 <td>{{ a.publish_date or '—' }}</td>
-                <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open →</a></td>
+                <td class="created-at">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open</a></td>
               </tr>
               {% endfor %}
             </tbody>
@@ -141,6 +160,7 @@
                 <th>Lang</th>
                 <th>Title</th>
                 <th>Publish Date</th>
+                <th class="created-at">Created At</th>
                 <th>Link</th>
               </tr>
             </thead>
@@ -152,7 +172,8 @@
                 <td><span class="lang-tag">{{ a.language[:1] }}</span></td>
                 <td class="title-col">{{ a.title }}</td>
                 <td>{{ a.publish_date or '—' }}</td>
-                <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open →</a></td>
+                <td class="created-at">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open</a></td>
               </tr>
               {% endfor %}
             </tbody>
@@ -163,5 +184,30 @@
       {% endif %}
     </section>
   </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const scanBtn = document.getElementById("scanBtn");
+  if (scanBtn) {
+    scanBtn.addEventListener("click", (event) => {
+      event.preventDefault(); // stop the default submit
+
+      const form = scanBtn.closest("form"); // find enclosing form
+
+      // Disable the button and change UI
+      scanBtn.disabled = true;
+      scanBtn.innerHTML = "<span class='icon'>⏳</span> Scanning...";
+      scanBtn.style.opacity = "0.6";
+      scanBtn.style.cursor = "not-allowed";
+
+      form.submit();   // 🔥 manually submit the form
+    });
+  }
+});
+</script>
+
+
 </body>
 </html>
+
+
