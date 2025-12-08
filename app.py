@@ -134,6 +134,12 @@ def google_search(query, site):
 
     return results
 
+def title_contains_keyword(title, keywords):
+    if not title:
+        return False
+    title_lower = title.lower()
+    return any(k.lower().replace('"', '') in title_lower for k in keywords)
+
 # -------------------------------------------------
 # Email
 # -------------------------------------------------
@@ -218,21 +224,29 @@ def run_scan_and_save(send_email_immediate=False):
                     if not url:
                         continue
 
-                    # Check if already in DB
+                    title = item.get("title", "")
+
+                    # 🔥 1) Filter: only save if title contains keyword
+                    if not title_contains_keyword(title, queries):
+                        continue
+
+                    # 2) Check if already in DB
                     existing = session.query(PressArticle).filter_by(url=url).first()
                     if existing:
                         continue
 
+                    # 3) Extract publish date
                     publish_date = (
                         item.get("pagemap", {})
-                            .get("metatags", [{}])[0]
-                            .get("article:published_time", "Unknown")
+                        .get("metatags", [{}])[0]
+                        .get("article:published_time", "Unknown")
                     )
 
+                    # 4) Save to DB
                     article = PressArticle(
                         newspaper=get_newspaper_name(url),
                         language=get_language(url),
-                        title=item.get("title"),
+                        title=title,
                         url=url,
                         snippet=item.get("snippet"),
                         query_used=query,
@@ -356,7 +370,8 @@ def index():
             "end_date": end_date
         },
         newspapers_sorted=sorted(set(NEWS_MAP.values())),
-        languages=languages
+        languages=languages,
+        pytz=pytz
     )
 
 
@@ -388,7 +403,8 @@ def run_scan():
             "start_date": "",
             "end_date": ""
         },
-        newspapers_sorted=sorted(set(NEWS_MAP.values()))
+        newspapers_sorted=sorted(set(NEWS_MAP.values())),
+        pytz=pytz
     )
 
 # -------------------------------------------------

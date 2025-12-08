@@ -133,7 +133,9 @@
                 <td><span class="lang-tag">{{ a.language[:1] }}</span></td>
                 <td class="title-col">{{ a.title }}</td>
                 <td>{{ a.publish_date or '—' }}</td>
-                <td class="created-at">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td class="created-at">
+                  {{ a.created_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Asia/Colombo")).strftime('%Y-%m-%d %H:%M') }}
+                </td>
                 <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open</a></td>
               </tr>
               {% endfor %}
@@ -172,7 +174,9 @@
                 <td><span class="lang-tag">{{ a.language[:1] }}</span></td>
                 <td class="title-col">{{ a.title }}</td>
                 <td>{{ a.publish_date or '—' }}</td>
-                <td class="created-at">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td class="created-at">
+                  {{ a.created_at.replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Asia/Colombo")).strftime('%Y-%m-%d %H:%M') }}
+                </td>
                 <td><a href="{{ a.url }}" target="_blank" rel="noopener" class="link-btn">Open</a></td>
               </tr>
               {% endfor %}
